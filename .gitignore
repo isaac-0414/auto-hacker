@@ -1,0 +1,7 @@
+*.env
+**/__pycache__/
+data/
+*.DS_Store
+test.py
+legacy/
+gpt_logs/
