@@ -245,6 +245,10 @@ class SQLInjector:
                 links.append(line)
         
         return links
+    
+
+    async def shutDown(self):
+        await self.browser.close()
 
 
 ### Helper Functions ###

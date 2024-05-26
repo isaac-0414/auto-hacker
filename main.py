@@ -14,8 +14,9 @@ async def main():
     print("\nPlease enter a URL for me to hack")
     asyncio.sleep(0.5)
     url = input('\nURL: ')
-    sql_injector = await SQLInjector(base_url=url)
+    sql_injector: SQLInjector = await SQLInjector(base_url=url)
     await sql_injector.trial(url)
+    await sql_injector.shutDown()
         
 
 if __name__ == '__main__':
