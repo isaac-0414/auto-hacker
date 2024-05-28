@@ -1,0 +1,24 @@
+{
+  "name": "2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon ./app.mjs",
+    "start": "node ./app.mjs"
+  },
+  "keywords": [],
+  "author": "Isaac Zheng",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "mysql2": "^3.9.8",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.1"
+  },
+  "type": "module"
+}

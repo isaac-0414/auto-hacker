@@ -4,7 +4,7 @@ import re
 from time import time, sleep
 from .file_io import save_file 
 
-def gpt(system_msg: str, user_msg: str, model="gpt-4o", temp=0.0, top_p=1.0, tokens=1024, freq_pen=0.0, pres_pen=0.0, log=False):
+def gpt(system_msg: str, user_msg: str, model="gpt-4o", temp=0.0, top_p=1.0, tokens=1024, freq_pen=0.0, pres_pen=0.0, log=True):
     max_retry = 3
     retry = 0
     

@@ -5,3 +5,5 @@ data/
 test.py
 legacy/
 gpt_logs/
+
+node_modules/
