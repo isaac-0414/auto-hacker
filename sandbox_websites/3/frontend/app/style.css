@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0");
+
+@font-face {
+   font-family: 'Sniglet';
+   font-style: normal;
+   font-weight: 400;
+   src: local('Sniglet Regular'), local('Sniglet-Regular'), url('/fonts/Sniglet-Regular.ttf') format('truetype');
+}
+
+.landing-page * {
+   font-family: 'Sniglet', serif;
+   transition-duration: 0.5s;
+}
+
+.landing-page::before {    
+   content: "";
+   background-image: url("/images/The Starry Sky.png");
+   background-repeat: no-repeat;
+   background-size: cover;
+   position: absolute;
+   top: 0px;
+   right: 0px;
+   bottom: 0px;
+   left: 0px;
+   opacity: 0.07;
+}
+
+.app-nav {
+   text-decoration: none;
+   display: inline-block;
+   position: relative;
+   cursor: pointer;
+}
+
+.app-nav:after {
+   content: '';
+   position: absolute;
+   width: 100%;
+   transform: scaleX(0);
+   height: 3px;
+   bottom: -3px;
+   left: 0;
+   background-color:#FFD60A;
+   transform-origin: bottom right;
+   transition: transform 0.25s ease-out;
+}
+
+.app-nav:hover:after, .app-nav.active:after {
+   transform: scaleX(1);
+   transform-origin: bottom left;
+}
+ 
+/* Smartphones (portrait and landscape) ----------- */
+@media only screen and (max-width: 767px) {
+   header {
+      height: 8vh;
+      padding: 0 10px;
+   }
+ 
+   header nav {
+      margin: 0;
+      position: absolute;
+      top: 10vh;
+      left: 50vw;
+      transform: translateX(-50%);
+   }
+   
+   #app-nav {
+      font-size: 16px;
+      margin-left: 20px;
+   }
+ 
+   header .profile .name {
+      display: none;
+   }
+}
+
+.fade-in {
+   opacity: 0%;
+   animation: fade-in 0.5s ease-in-out forwards;
+}
+ 
+/* @keyframes fadeIn {
+   from {
+     opacity: 0%;
+   }
+   to {
+     opacity: 100%;
+   }
+} */
+
+@keyframes fade-in {
+   0% {
+     opacity: 0%;
+     transform: translateY(8px);
+   }
+   100% {
+     opacity: 100%;
+     transform: translateY(0px);
+   }
+}
+
+.active {
+   display: block;
+}
+ 
+.hidden {
+   display: none;
+}

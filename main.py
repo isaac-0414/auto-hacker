@@ -13,10 +13,10 @@ async def main():
     openai.api_key = OPENAI_API_KEY
     
     print("\nPlease enter a URL for me to hack")
-    # await asyncio.sleep(0.5)
+    await asyncio.sleep(0.5)
 
-    # url = input('\nURL: ')
-    url = "http://localhost:3000/"
+    url = input('\nURL: ')
+    # url = "http://localhost:3000/"
 
     sql_injector: SQLInjector = SQLInjector(base_url=url)
     async with async_playwright() as playwright:

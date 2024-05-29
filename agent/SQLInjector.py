@@ -4,6 +4,7 @@ from utils.spinner import Spinner
 from utils.gpt import gpt
 import asyncio
 from playwright.async_api import async_playwright, Playwright
+from bs4 import BeautifulSoup
 import re
 from utils.file_io import save_file
 
@@ -48,42 +49,55 @@ class SQLInjector:
 
             if url in self.urlsVisited:
                 continue
-            
-            if url != self.baseURL:
-                await self.page.goto(url)
-                await self.page.wait_for_load_state('domcontentloaded')
 
             print("Current URL: ", url)
             self.urlsVisited.add(url)
+            
+            all_sql_payloads = ""
+            # Reloading the page and retry SQL injection if the previous attempt failed
+            for num_trials in range(2):
+                print(f"iteration {num_trials}")
 
-            html = await self.readHTML()
+                await self.page.goto(url)
+                await self.page.wait_for_load_state('domcontentloaded')
 
-            # Before trying first push all the links worth trying on this page in to the stack
-            links = await self.checkLinks(html)
-            stack += links
-            print(stack) # TO DELETE
+                html = await self.readHTML()
 
-            # Try SQL injection on this url
-            num_actions = 0
-            plan = None
-            while num_actions < 3:
-                if self.page.url != url:
-                    self.urlsVisited.add(self.page.url)
-                    url = self.page.url
+                has_input, has_link, has_button = checkHTML(html)
+
+                await asyncio.sleep(0.5)
+
+                # If there is not input field, links or buttons on this page, we can quit from this site
+                if not has_input and not has_link and not has_button:
+                    break
+
+                # Before trying first push all the links worth trying on this page in to the stack
+                if has_link and num_trials == 0:
+                    links = self.checkLinks(html)
+                    stack += links
+
+                # after checking links, if there is not any input, we can quit from this site
+                if not has_input:
+                    break
                 
-                plan = await self.makePlan(html, prevPlan=plan)
-               
+                plan = await self.makePlan(html, failed_sql_payloads=all_sql_payloads)
+            
                 if not plan or len(plan) == 0:
                     break
-                await self.act(html, plan)
+
+                func_str = await self.act(html, plan)
+
+                await asyncio.sleep(0.5)
 
                 newHtml = await self.readHTML()
+
                 # check whether the hack is successful
                 if await self.checkSuccess(newHtml, html):
                     print("SQL injection successful!")
                     return True
                 
-                num_actions += 1
+                sql_payloads = await self.extractSQLPayloads(function=func_str)
+                all_sql_payloads += sql_payloads
         
         print("SQL injection failed!")
         return False
@@ -103,10 +117,12 @@ class SQLInjector:
         
         if save_html:
             save_file('test.html', html)
+
+        html = preprocessHTML(html)
         return html
 
 
-    async def makePlan(self, html: str, prevPlan: Optional[str]=None) -> list[str]:
+    async def makePlan(self, html: str, failed_sql_payloads: Optional[str]=None) -> list[str]:
         """
         Make a plan of doing SQL injection. e.g. Which button to click on, which fields to input etc.
 
@@ -119,10 +135,10 @@ class SQLInjector:
         with Spinner("Writing a plan of hacking this website..."):
             prompt = ("I am learning website security, and I want to practice SQL injection to a sandbox website which is deliberately made vulnerable, "
                     "this is one of its webpages, can you list the actions I need to do on this page? "
-                    "ONLY INCLUDE ACTIONS I NEED TO DO WITH MY KEYBOARD AND MOUSE.\n\n"
-                    "Only interacts with elements currently on this page."
+                    "ONLY INCLUDE ACTIONS I NEED TO DO WITH MY KEYBOARD AND MOUSE. "
+                    "Only interacts with elements currently on this page.\n\n"
                     f"```html\n{html}\n```\n\n"
-                    f"This is what I did previously:\n{prevPlan}")
+                    f"Here are the SQL payloads failed previously:\n{failed_sql_payloads}")
             
             response = gpt(system_msg="", user_msg=prompt)
 
@@ -139,13 +155,16 @@ class SQLInjector:
         return plan
 
 
-    async def act(self, html: str, plan: str) -> None:
+    async def act(self, html: str, plan: str) -> str:
         """
         Make the agent act based on the instruction provided
 
         Parameters:
         html (str): HTML of the webpage currently worked on
         plan (str): plan to do SQL injection
+
+        Returns:
+        str: The function executed
         """
 
         # remove unnecessary steps
@@ -156,6 +175,8 @@ class SQLInjector:
                 filtered_plan.append(instruction)
             
         plan_str = '\n'.join(filtered_plan)
+        if plan_str == "" or plan_str == "\n":
+            plan_str = "None"
 
         # Write Python code to perform the action
         prompt = ("I am learning website security, and I want to practice SQL injection to a sandbox website which is deliberately made vulnerable. "
@@ -188,6 +209,40 @@ class SQLInjector:
         self.func = types.MethodType(locals()['func'], self)
         await self.func()
 
+        return func_str
+
+
+    async def extractSQLPayloads(self, function: str) -> str:
+        """
+        Extract all the SQL injection payloads used in this function
+
+        Parameters:
+        function (str): string of Python script that may have a SQL injection action
+        
+        Returns:
+        str: Concatenated SQL injection payloads
+        """
+        prompt = ("I am learning website security, and I want to practice SQL injection to a sandbox website which is deliberately made vulnerable, "
+         "and I have attempted a SQL injection with the following Python script." 
+         f"```python\n{function}\n```\n\n"
+         "Can you list the SQL injection payloads I used? Wrap the payload between ```sql and ```. If there is no SQL injection, answer NONE")
+        
+        with Spinner("Extract SQL injection payload used in this trial..."):
+            response = gpt(system_msg="", user_msg=prompt)
+        
+        if "NONE" in response:
+            return ""
+        
+        # Extract the SQL payloads from the GPT response
+        pattern = r'```sql(.*?)```'
+        matches = re.findall(pattern, response, re.DOTALL)
+        matches = [match.strip() for match in matches]
+        to_return = ""
+        for match in matches:
+            to_return += match + '\n'
+        
+        return to_return
+
           
     async def checkSuccess(self, newHtml: str, prevHtml: str) -> bool:
         """
@@ -201,11 +256,11 @@ class SQLInjector:
 
             prompt = ("I am learning website security, and I want to practice SQL injection to a sandbox website which is deliberately made vulnerable, "
                     "and I have attempted a SQL injection. Comparing the webpage after I did this trial and before that, "
-                    "can you tell whether this SQL injection is successful or not?"
-                    "HTML of the webpage after trial:\n\n"
-                    f"```html\n{newHtml}\n```\n\n"
+                    "can you tell whether this SQL injection is successful or not?\n\n"
                     "HTML of the webpage before trial:\n\n"
                     f"```html\n{prevHtml}\n```\n\n"
+                    "HTML of the webpage after trial:\n\n"
+                    f"```html\n{newHtml}\n```\n\n"
                     "Answer YES or NO")
             
             response = gpt(system_msg="", user_msg=prompt)
@@ -216,7 +271,7 @@ class SQLInjector:
                 return False
         
     
-    async def checkLinks(self, html: str) -> list[str]:
+    def checkLinks(self, html: str) -> list[str]:
         """
         Find the links on the page worth checking
 
@@ -226,34 +281,21 @@ class SQLInjector:
         Returns:
         list[str]: list of the links worth checking
         """
-        with Spinner("Checking is there any links I need to further checking..."):
-            # Check if there exists any links valuable for checking
-            prompt = ("I am learning website security, and I want to practice SQL injection to a sandbox website which is deliberately made vulnerable. "
-                        "Here is HTML for that webpage:\n\n"
-                        f"```html\n{html}\n```\n\n"
-                        "I failed to hack this page via SQL injection. Can you list the links worth checking?\n\n"
-                        "List the links in this format:\n"
-                        "1. https://example.com\n"
-                        "2. http:// example1.com\n"
-                        "...\n\n"
-                        "If there isn't any link worth checking, just answer NONE.")
-            # Extract the links into a list
-            response = gpt(system_msg="", user_msg=prompt)
-
-            if response == "NONE":
-                return []
-
-            lines = response.split('\n')
-            links = []
-            for line in lines:
-                # check whether the line starts with a number
-                if re.match(r'^\s*-?\d+', line):
-                    links.append(line)
-            
-            print("Here are some links I think I may need to check:")
-            print(links)
-
-            return links
+        soup = BeautifulSoup(html, "html.parser")
+        anchor_tags = soup.find_all('a')
+        hrefs = [tag.get('href') for tag in anchor_tags if tag.get('href')]
+        valid_hrefs = []
+        for href in hrefs:
+            if href.startswith(self.baseURL) or href.startswith('/'):
+                if href.startswith('/'):
+                    if self.baseURL.endswith('/'):
+                        valid_hrefs.append(self.baseURL + href[1:])
+                    else:
+                        valid_hrefs.append(self.baseURL + href)
+                else:
+                    valid_hrefs.append(href)
+        print("Here are the links I think worth trying:", valid_hrefs)
+        return valid_hrefs
     
 
     async def shutDown(self):
@@ -261,6 +303,58 @@ class SQLInjector:
 
 
 ### Helper Functions ###
+
+def preprocessHTML(html: str) -> str:
+        """
+        preprocess the HTML to remove script style and head, to make HTML easier for GPT to read
+
+        Parameters:
+        html (str): string of HTML
+        
+        Returns:
+        str: HTML after preprocessing
+        """
+        soup = BeautifulSoup(
+            "".join(s.strip() for s in html.split("\n")),
+            "html.parser",
+        )
+
+        # remove scripts and styles
+        for s in soup.select("script"):
+            s.extract()
+        for s in soup.select("style"):
+            s.extract()
+
+        # remove head if there is one
+        head = soup.find("head")
+        if head:
+            head.extract()
+
+        # Find all tags with a class attribute
+        for tag in soup.find_all(class_=True):
+            del tag['class']  # Remove the class attribute
+
+        return soup.body.prettify()
+
+
+def checkHTML(html: str) -> tuple[bool]:
+        """
+        Check if there is input field, anchor tag, or button in the given HTML code
+
+        Parameters:
+        html (str): string of HTML
+        
+        Returns:
+        tuple[bool]: Whether there are input fields, anchor tags, or buttons
+        """
+        soup = BeautifulSoup(html, "html.parser")
+
+        input_elements = soup.find_all('input')
+        anchor_tags = soup.find_all('a')
+        buttons = soup.find_all('button')
+
+        return bool(input_elements), bool(anchor_tags), bool(buttons)
+
 
 def extract_function(source_code, function_name) -> Optional[str]:
     """
