@@ -1,6 +1,5 @@
 # Auto-Hacker
 
-![License](https://img.shields.io/github/license/isaac-0414/auto-hacker)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 
 ## Table of Contents
