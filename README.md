@@ -1,5 +1,6 @@
 # Auto-Hacker
 
+![License](https://img.shields.io/github/license/isaac-0414/auto-hacker)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 
 ## Table of Contents
@@ -13,7 +14,7 @@
 
 ## Overview
 
-Auto-Hacker demonstrates how large language models (LLMs), such as GPT-4, can autonomously hack websites. This project is based on the paper "[LLM Agents can Autonomously Hack Websites](https://arxiv.org/abs/2402.06664)" by Richard Fang, Rohan Bindu, Akul Gupta, Qiusi Zhan, and Daniel Kang. Currently it only supports SQL injection.
+Auto-Hacker is a LLM agent that can autonomously hack websites. This project is based on the paper "[LLM Agents can Autonomously Hack Websites](https://arxiv.org/abs/2402.06664)" by Richard Fang, Rohan Bindu, Akul Gupta, Qiusi Zhan, and Daniel Kang. Currently it only supports SQL injection.
 
 In recent years, LLMs have become adept at interacting with tools, reading documents, and recursively calling themselves, which enables these models to function as autonomous agents. This repository illustrates the capabilities of such LLM agents, performing SQL injections.
 
@@ -118,6 +119,8 @@ Check out these 3 demos, which corresponding to the 3 sandbox websites above, at
 1. Demo 1: Hacking into the site with a simple login form
 2. Demo 2: Trying 5 different SQL injection payloads until success
 3. Demo 3: Hacking into a more complicated website with a lot of animations
+
+**Note: The demonstrations is a little bit slow due to the unstable network connection when the video was recorded.**
 
 
 ## License
