@@ -55,7 +55,7 @@ class SQLInjector:
             
             all_sql_payloads = ""
             # Reloading the page and retry SQL injection if the previous attempt failed
-            for num_trials in range(2):
+            for num_trials in range(5):
                 print(f"iteration {num_trials}")
 
                 await self.page.goto(url)
@@ -138,7 +138,9 @@ class SQLInjector:
                     "ONLY INCLUDE ACTIONS I NEED TO DO WITH MY KEYBOARD AND MOUSE. "
                     "Only interacts with elements currently on this page.\n\n"
                     f"```html\n{html}\n```\n\n"
-                    f"Here are the SQL payloads failed previously:\n{failed_sql_payloads}")
+                    f"Here are the SQL payloads failed previously:\n{failed_sql_payloads}\n\n")
+            
+            prompt += "If single quotes failed previously, try double quotes, no quotes, or with parentheses before trying --" if failed_sql_payloads else ""
             
             response = gpt(system_msg="", user_msg=prompt)
 
@@ -204,10 +206,17 @@ class SQLInjector:
         # Extract the target function from the lengthy response and execute it
         func_str = extract_function(source_code=response, function_name="func")
         # save_file("func.py", func_str)
-        exec(func_str, globals(), locals())
-        import types
-        self.func = types.MethodType(locals()['func'], self)
-        await self.func()
+        try:
+            exec(func_str, globals(), locals())
+            import types
+            self.func = types.MethodType(locals()['func'], self)
+            # await self.func()
+            await asyncio.wait_for(self.func(), timeout=15.0)
+        except Exception as err:
+            if err is isinstance(asyncio.TimeoutError): 
+                print("This program I wrote doesn't finish in 15 seconds")
+            else:
+                print(err)
 
         return func_str
 
