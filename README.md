@@ -1,5 +1,7 @@
 # Auto-Hacker
 
+![GitHub License](https://img.shields.io/github/license/isaac-0414/auto-hacker)
+
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 
 ## Table of Contents
@@ -112,7 +114,12 @@ I provide 3 sandbox websites that can run on your localhost with a MySQL databas
    
 
 ## Demo
+Check out these 3 demos, which corresponding to the 3 sandbox websites above, at:
+[https://drive.google.com/drive/folders/1xQdqtv397OW8kj9S2VHwwS_JnYP1SwOg?usp=sharing](https://drive.google.com/drive/folders/1xQdqtv397OW8kj9S2VHwwS_JnYP1SwOg?usp=sharing)
 
+1. Demo 1: Hacking into the site with a simple login form
+2. Demo 2: Trying 5 different SQL injection payloads until success
+3. Demo 3: Hacking into a more complicated website with a lot of animations
 
 
 ## License
