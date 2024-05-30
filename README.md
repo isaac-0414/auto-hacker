@@ -45,7 +45,7 @@ In recent years, LLMs have become adept at interacting with tools, reading docum
 
 ### Basic Usage
 
-1. For Mac users
+1. For Mac and Linux users
    ```bash
    ./run.sh
    ```
@@ -58,7 +58,7 @@ In recent years, LLMs have become adept at interacting with tools, reading docum
 
 ## Testing
 
-I provide 3 sandbox websites that can run on your localhost with a MySQL database. All the websites will runs on http://localhost:3000/
+I provide 3 sandbox websites which are deliberately made vulnerable to SQL injection and can run on your localhost with a MySQL database. All the websites run on http://localhost:3000/. You should set up your MySQL database and install Node.js on your machine before running any of these following commands.
 
 1. Website 1: A simple login form (Express.js + MySQL)
    ```bash
